@@ -181,27 +181,3 @@ export async function testSupabaseConnection(): Promise<ConnectionTestResult> {
     };
   }
 }
-
-/**
- * Garantiza que exista una sesión activa en Supabase Auth.
- * Si no hay sesión o expiró, autentica con la cuenta administrativa oficial
- * para que las operaciones con RLS (profiles, orders, reviews, wishlist) tengan permisos totales.
- */
-export async function ensureSupabaseAuthSession(): Promise<boolean> {
-  const client = getSupabaseClient();
-  if (!client) return false;
-  try {
-    const { data: sessionData } = await client.auth.getSession();
-    if (sessionData?.session) {
-      return true;
-    }
-    const { data, error } = await client.auth.signInWithPassword({
-      email: 'admin@mujerlatina.com',
-      password: 'Admin2026!',
-    });
-    return !error && !!data.session;
-  } catch (err) {
-    console.warn('⚠️ Fallo silencioso en ensureSupabaseAuthSession:', err);
-    return false;
-  }
-}

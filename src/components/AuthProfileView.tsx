@@ -855,16 +855,6 @@ export const AuthProfileView: React.FC<AuthProfileViewProps> = ({ controller }) 
                     </button>
                   )}
 
-                  {/* Switch profile quick button */}
-                  <button
-                    onClick={() => controller.openLoginModal()}
-                    className="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-stone-100 hover:bg-[#d4af37]/20 text-stone-800 rounded-xl sm:rounded-full text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border border-stone-200"
-                    id="switch-profile-btn"
-                  >
-                    <User size={13} className="text-[#b58d24]" />
-                    <span>Cambiar Perfil</span>
-                  </button>
-
                   {/* Normal Logout Button */}
                   <button
                     onClick={logout}
@@ -900,9 +890,9 @@ export const AuthProfileView: React.FC<AuthProfileViewProps> = ({ controller }) 
                       <MapPin size={16} className="text-[#b58d24] flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-semibold text-stone-900 block">Dirección</span>
-                        <span>{currentUser.address || 'Calle 6 #3-55, Barrio Centro'}</span>
+                        <span>{currentUser.address || 'Cra 45 # 12-34, Apto 501'}</span>
                         <span className="block text-stone-400">
-                          {currentUser.city || 'Mariquita'}, {currentUser.department || 'Tolima'}
+                          {currentUser.city || 'Medellín'}, {currentUser.department || 'Antioquia'}
                         </span>
                       </div>
                     </div>

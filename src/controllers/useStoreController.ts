@@ -11,8 +11,6 @@ import {
   ShippingData,
   RegisterData,
   StoreSettings,
-  Review,
-  WishlistRecord,
 } from '../types';
 import { 
   INITIAL_CATEGORIES, 
@@ -20,9 +18,7 @@ import {
   INITIAL_ORDERS, 
   INITIAL_CUSTOMERS, 
   DEMO_USER_PROFILE, 
-  ADMIN_USER_PROFILE,
-  PRESET_USER_PROFILES,
-  INITIAL_REVIEWS,
+  ADMIN_USER_PROFILE 
 } from '../models/mockData';
 import { 
   getSupabaseStatus, 
@@ -36,8 +32,6 @@ import {
   fetchOrdersFromSupabase,
   fetchStoreSettingsFromSupabase,
   fetchProfilesFromSupabase,
-  fetchReviewsFromSupabase,
-  fetchWishlistFromSupabase,
   insertProductToSupabase,
   updateProductInSupabase,
   updateProductStockInSupabase,
@@ -49,23 +43,14 @@ import {
   updateOrderShippingInSupabase,
   updateStoreSettingsInSupabase,
   upsertProfileToSupabase,
-  deleteProfileFromSupabase,
-  insertReviewToSupabase,
-  insertWishlistToSupabase,
-  deleteWishlistFromSupabase,
   exportLocalCatalogToSupabase,
-  exportOrdersToSupabase,
-  exportProfilesToSupabase,
-  exportReviewsToSupabase,
-  exportWishlistToSupabase,
 } from '../services/supabaseDataService';
 import { 
   authenticateUser, 
   registerNewUser, 
   requestPasswordReset, 
   updateAdminUserCredentials,
-  updateClientUserCredentials,
-  deleteStoredUser
+  updateClientUserCredentials 
 } from '../services/authService';
 
 // =========================================================================
@@ -172,8 +157,6 @@ const STORAGE_KEYS = {
   ORDERS: 'mujer_latina_orders_v1',
   CART: 'mujer_latina_cart_v1',
   WISHLIST: 'mujer_latina_wishlist_v1',
-  WISHLIST_RECORDS: 'mujer_latina_wishlist_records_v1',
-  REVIEWS: 'mujer_latina_reviews_v1',
   CUSTOMERS: 'mujer_latina_customers_v1',
   PROFILE: 'mujer_latina_profile_v1',
   STORE_SETTINGS: 'mujer_latina_store_settings_v1',
@@ -186,9 +169,9 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   whatsappDisplay: '+57 310 892 4110',
   supportEmail: 'contacto@mujerlatina.com',
   supportPhone: '+57 (300) 123-4567',
-  storeAddress: 'Calle 6, #3-55, Barrio Centro',
-  storeCity: 'Mariquita',
-  storeDepartment: 'Tolima',
+  storeAddress: 'Calle 10 # 40-20, El Poblado',
+  storeCity: 'Medellín',
+  storeDepartment: 'Antioquia',
   businessHours: 'Lunes a Sábado: 8:00 AM - 7:00 PM',
   standardShippingFee: 15000,
   freeShippingThreshold: 150000,
@@ -300,47 +283,17 @@ export function useStoreController() {
       const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-      return INITIAL_CUSTOMERS;
-    } catch {
-      return INITIAL_CUSTOMERS;
-    }
-  });
-
-  // Reviews reactive state (persisted in localStorage + Supabase sync)
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.REVIEWS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
         }
       }
-      return INITIAL_REVIEWS;
+      return INITIAL_CUSTOMERS;
     } catch {
-      return INITIAL_REVIEWS;
+      return INITIAL_CUSTOMERS;
     }
   });
 
-  // Database-backed Wishlist Records (keeps track of who added what product with full details)
-  const [wishlistRecords, setWishlistRecords] = useState<WishlistRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.WISHLIST_RECORDS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Store Settings (reactive with localStorage persistence + auto-migration to Mariquita, Tolima)
+  // Store Settings (reactive with localStorage persistence)
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.STORE_SETTINGS);
@@ -348,12 +301,6 @@ export function useStoreController() {
         const parsed = JSON.parse(saved);
         if (parsed) {
           parsed.bannerEnabled = false;
-          // Auto-migrate address to real location in Mariquita, Tolima
-          if (!parsed.storeCity || parsed.storeCity === 'Medellín' || /calle 10|el poblado|antioquia/i.test(parsed.storeAddress || '')) {
-            parsed.storeAddress = DEFAULT_STORE_SETTINGS.storeAddress;
-            parsed.storeCity = DEFAULT_STORE_SETTINGS.storeCity;
-            parsed.storeDepartment = DEFAULT_STORE_SETTINGS.storeDepartment;
-          }
           if (typeof parsed.storeSlogan === 'string' && /cuidado femenino/i.test(parsed.storeSlogan)) {
             parsed.storeSlogan = parsed.storeSlogan.replace(/•?\s*Cosméticos\s*y\s*Cuidado\s*Femenino/gi, '').trim() || 'Belleza que Empodera';
           }
@@ -420,22 +367,6 @@ export function useStoreController() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
-    } catch (e) {
-      console.warn('Persistence error:', e);
-    }
-  }, [reviews]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.WISHLIST_RECORDS, JSON.stringify(wishlistRecords));
-    } catch (e) {
-      console.warn('Persistence error:', e);
-    }
-  }, [wishlistRecords]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
       if (currentUser?.id) {
         localStorage.setItem(`mujer_latina_cart_user_${currentUser.id}`, JSON.stringify(cart));
@@ -482,7 +413,7 @@ export function useStoreController() {
   const [supabaseStatus, setSupabaseStatus] = useState<SupabaseConfigStatus>(() => getSupabaseStatus());
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
 
-  // Sincroniza categorías, productos, pedidos, configuración, reseñas y lista de deseos desde Supabase
+  // Sincroniza categorías, productos, pedidos y configuración desde Supabase PostgreSQL
   const syncFromSupabase = useCallback(async () => {
     const status = getSupabaseStatus();
     setSupabaseStatus(status);
@@ -490,14 +421,12 @@ export function useStoreController() {
 
     setIsCloudSyncing(true);
     try {
-      const [cloudCategories, cloudProducts, cloudOrders, cloudSettings, cloudProfiles, cloudReviews, cloudWishlist] = await Promise.allSettled([
+      const [cloudCategories, cloudProducts, cloudOrders, cloudSettings, cloudProfiles] = await Promise.allSettled([
         fetchCategoriesFromSupabase(),
         fetchProductsFromSupabase(),
         fetchOrdersFromSupabase(),
         fetchStoreSettingsFromSupabase(),
         fetchProfilesFromSupabase(),
-        fetchReviewsFromSupabase(),
-        fetchWishlistFromSupabase(),
       ]);
 
       if (cloudCategories.status === 'fulfilled' && cloudCategories.value && cloudCategories.value.length > 0) {
@@ -510,30 +439,6 @@ export function useStoreController() {
 
       if (cloudOrders.status === 'fulfilled' && cloudOrders.value && cloudOrders.value.length > 0) {
         setOrders(cloudOrders.value);
-      }
-
-      if (cloudReviews.status === 'fulfilled' && cloudReviews.value && cloudReviews.value.length > 0) {
-        setReviews((prevRev) => {
-          const merged = [...cloudReviews.value!];
-          prevRev.forEach((pr) => {
-            if (!merged.some((cr) => cr.id === pr.id || (cr.productId === pr.productId && cr.comment === pr.comment))) {
-              merged.push(pr);
-            }
-          });
-          return merged;
-        });
-      }
-
-      if (cloudWishlist.status === 'fulfilled' && cloudWishlist.value && cloudWishlist.value.length > 0) {
-        setWishlistRecords((prevRecords) => {
-          const merged = [...cloudWishlist.value!];
-          prevRecords.forEach((pr) => {
-            if (!merged.some((cw) => cw.productId === pr.productId && cw.userId === pr.userId)) {
-              merged.push(pr);
-            }
-          });
-          return merged;
-        });
       }
 
       if (cloudSettings.status === 'fulfilled' && cloudSettings.value) {
@@ -564,9 +469,9 @@ export function useStoreController() {
                 name: rp.fullName,
                 email: rp.email,
                 phone: rp.phone || '+57 300 000 0000',
-                city: rp.city || 'Mariquita',
-                department: rp.department || 'Tolima',
-                address: rp.address || 'Calle 6 #3-55 Barrio Centro',
+                city: rp.city || 'Bogotá',
+                department: rp.department || 'Cundinamarca',
+                address: rp.address || '',
                 avatarUrl: rp.avatarUrl,
                 ordersCount: 0,
                 totalSpent: 0,
@@ -695,86 +600,17 @@ export function useStoreController() {
   }, [cartSubtotal, cartShippingFee]);
 
   // =========================================================================
-  // WISHLIST REACTIVE OPERATIONS (LOCAL + SUPABASE POSTGRESQL SYNC)
+  // WISHLIST REACTIVE OPERATIONS
   // =========================================================================
   const toggleWishlist = useCallback((productId: string) => {
-    const targetProduct = products.find((p) => p.id === productId);
-
     setWishlist((prev) => {
-      const willAdd = !prev.includes(productId);
-      const next = willAdd ? [...prev, productId] : prev.filter((id) => id !== productId);
-
-      if (willAdd) {
-        const record: WishlistRecord = {
-          id: `wish-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          productId,
-          productName: targetProduct?.name || 'Producto Mujer Latina',
-          productSku: targetProduct?.sku,
-          productPrice: targetProduct?.price || 0,
-          imageUrl: targetProduct?.imageUrl,
-          userId: currentUser?.id || null,
-          userEmail: currentUser?.email || null,
-          userName: currentUser?.fullName || null,
-          addedAt: new Date().toISOString(),
-        };
-
-        setWishlistRecords((records) => [record, ...records.filter((r) => r.productId !== productId)]);
-        // Persistir en Supabase
-        insertWishlistToSupabase(record, targetProduct?.sku).catch((err) => {
-          console.warn('⚠️ Sincronización de wishlist con Supabase:', err);
-        });
+      if (prev.includes(productId)) {
+        return prev.filter((id) => id !== productId);
       } else {
-        setWishlistRecords((records) => records.filter((r) => r.productId !== productId));
-        // Eliminar de Supabase
-        deleteWishlistFromSupabase(productId, currentUser?.id).catch((err) => {
-          console.warn('⚠️ Eliminación de wishlist en Supabase:', err);
-        });
+        return [...prev, productId];
       }
-
-      return next;
     });
-  }, [products, currentUser]);
-
-  // =========================================================================
-  // REVIEWS REACTIVE OPERATIONS (LOCAL + SUPABASE POSTGRESQL SYNC)
-  // =========================================================================
-  const addReview = useCallback((newRev: Omit<Review, 'id' | 'createdAt'>) => {
-    const targetProd = products.find((p) => p.id === newRev.productId || p.sku === newRev.productSku);
-    const created: Review = {
-      ...newRev,
-      id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      productName: newRev.productName || targetProd?.name || 'Producto Mujer Latina',
-      productSku: newRev.productSku || targetProd?.sku,
-      createdAt: new Date().toISOString(),
-      isApproved: true,
-      isVerifiedPurchase: true,
-    };
-
-    setReviews((prev) => [created, ...prev]);
-
-    // Sincronizar reseña en Supabase
-    insertReviewToSupabase(created, created.productSku).catch((err) => {
-      console.warn('⚠️ Fallo al guardar reseña en Supabase:', err);
-    });
-
-    // Actualizar rating y conteo de reseñas reactivamente
-    setProducts((prev) =>
-      prev.map((p) => {
-        if (p.id === created.productId || (created.productSku && p.sku === created.productSku)) {
-          const currentCount = p.reviewsCount || 0;
-          const newCount = currentCount + 1;
-          const currentRating = p.rating || 5;
-          const newRating = Number(((currentRating * currentCount + created.rating) / newCount).toFixed(1));
-          const updated = { ...p, reviewsCount: newCount, rating: newRating };
-          updateProductInSupabase(p.id, { reviewsCount: newCount, rating: newRating }).catch(() => {});
-          return updated;
-        }
-        return p;
-      })
-    );
-
-    return created;
-  }, [products]);
+  }, []);
 
   const isInWishlist = useCallback((productId: string) => {
     return wishlist.includes(productId);
@@ -1218,34 +1054,9 @@ export function useStoreController() {
     );
   }, []);
 
-  const deleteCustomer = useCallback(async (id: string, email?: string) => {
-    const target = customers.find(
-      (c) => c.id === id || (email && c.email.toLowerCase().trim() === email.toLowerCase().trim())
-    );
-    const targetEmail = email || target?.email;
-
-    setCustomers((prev) => {
-      const updated = prev.filter(
-        (c) => c.id !== id && (!targetEmail || c.email.toLowerCase().trim() !== targetEmail.toLowerCase().trim())
-      );
-      try {
-        localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(updated));
-      } catch (e) {
-        console.warn(e);
-      }
-      return updated;
-    });
-
-    // Eliminar de la tabla local de usuarios de autenticación
-    deleteStoredUser(id, targetEmail);
-
-    // Eliminar realmente de la base de datos en Supabase (únicamente el usuario en profiles)
-    const res = await deleteProfileFromSupabase(id, targetEmail);
-    if (!res.success) {
-      console.warn('⚠️ Fallo al eliminar usuario en Supabase:', res.error);
-    }
-    return res;
-  }, [customers]);
+  const deleteCustomer = useCallback((id: string) => {
+    setCustomers((prev) => prev.filter((c) => c.id !== id));
+  }, []);
 
   // =========================================================================
   // USER PROFILE & AUTH (RBAC) & CART RESTORATION
@@ -1505,62 +1316,6 @@ export function useStoreController() {
     }
   }, [categories, products]);
 
-  // Exportar / Sincronizar pedidos con Supabase
-  const exportOrdersToSupabaseAction = useCallback(async () => {
-    setIsCloudSyncing(true);
-    try {
-      const res = await exportOrdersToSupabase(orders);
-      return res;
-    } finally {
-      setIsCloudSyncing(false);
-    }
-  }, [orders]);
-
-  // Exportar / Sincronizar perfiles y clientes con Supabase
-  const exportProfilesToSupabaseAction = useCallback(async () => {
-    setIsCloudSyncing(true);
-    try {
-      const profs: UserProfile[] = customers.map((c) => ({
-        id: c.id,
-        email: c.email,
-        fullName: c.name,
-        role: 'customer',
-        status: 'active',
-        phone: c.phone,
-        department: c.department || 'Tolima',
-        city: c.city || 'Mariquita',
-        address: c.address || 'Barrio Centro',
-        memberSince: '2025',
-      }));
-      const res = await exportProfilesToSupabase(profs);
-      return res;
-    } finally {
-      setIsCloudSyncing(false);
-    }
-  }, [customers]);
-
-  // Exportar / Sincronizar reseñas con Supabase
-  const exportReviewsToSupabaseAction = useCallback(async () => {
-    setIsCloudSyncing(true);
-    try {
-      const res = await exportReviewsToSupabase(reviews);
-      return res;
-    } finally {
-      setIsCloudSyncing(false);
-    }
-  }, [reviews]);
-
-  // Exportar / Sincronizar wishlist con Supabase
-  const exportWishlistToSupabaseAction = useCallback(async () => {
-    setIsCloudSyncing(true);
-    try {
-      const res = await exportWishlistToSupabase(wishlistRecords);
-      return res;
-    } finally {
-      setIsCloudSyncing(false);
-    }
-  }, [wishlistRecords]);
-
   return {
     // Navigation
     activeView,
@@ -1618,11 +1373,6 @@ export function useStoreController() {
     clearWishlist,
     isInWishlist,
     moveWishlistToCart,
-    wishlistRecords,
-
-    // Reviews
-    reviews,
-    addReview,
 
     // WhatsApp Order Checkout
     generateWhatsAppOrderLink,
@@ -1668,10 +1418,6 @@ export function useStoreController() {
     isCloudSyncing,
     syncFromSupabase,
     uploadInventoryToSupabase,
-    exportOrdersToSupabaseAction,
-    exportProfilesToSupabaseAction,
-    exportReviewsToSupabaseAction,
-    exportWishlistToSupabaseAction,
     testSupabaseConnection: testConnection,
   };
 }

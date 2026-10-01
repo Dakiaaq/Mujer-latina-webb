@@ -40,28 +40,10 @@ export interface Product {
 export interface Review {
   id: string;
   productId: string;
-  productName?: string;
-  productSku?: string;
   customerName: string;
-  userEmail?: string;
   rating: number;
   comment: string;
   createdAt: string;
-  isVerifiedPurchase?: boolean;
-  isApproved?: boolean;
-}
-
-export interface WishlistRecord {
-  id: string;
-  userId?: string | null;
-  userEmail?: string | null;
-  userName?: string | null;
-  productId: string;
-  productName: string;
-  productSku?: string;
-  productPrice: number;
-  imageUrl?: string;
-  addedAt: string;
 }
 
 export interface CartItem {

@@ -32,9 +32,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ controller }) => {
     whatsappDisplay: '+57 (310) 892-4110',
     supportEmail: 'contacto@mujerlatina.com',
     supportPhone: '+57 (604) 448-9210',
-    storeAddress: 'Calle 6, #3-55, Barrio Centro',
-    storeCity: 'Mariquita',
-    storeDepartment: 'Tolima',
+    storeAddress: 'Calle 10 # 40-20, El Poblado',
+    storeCity: 'Medellín',
+    storeDepartment: 'Antioquia',
     businessHours: 'Lunes a Sábado: 8:00 AM - 7:00 PM | Dom: 10:00 AM - 4:00 PM',
   };
 
@@ -81,10 +81,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ controller }) => {
   };
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    'Calle 6 # 3-55, Mariquita, Tolima, Colombia'
+    `${settings.storeAddress}, ${settings.storeCity}, Colombia`
   )}`;
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(
-    'Calle 6 # 3-55, Mariquita, Tolima, Colombia'
+    `${settings.storeAddress}, ${settings.storeCity}, Colombia`
   )}`;
 
   return (
@@ -525,34 +525,34 @@ export const AboutView: React.FC<AboutViewProps> = ({ controller }) => {
               <div className="space-y-5">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d4af37]/15 text-[#9a761a] text-xs font-bold">
                   <MapPin size={13} />
-                  <span>Showroom Principal Mariquita, Tolima</span>
+                  <span>Showroom Principal {settings.storeCity}</span>
                 </div>
 
                 <h3 className="font-serif-title text-xl sm:text-2xl font-bold text-stone-900">
-                  Calle 6, #3-55, Mariquita, Barrio Centro
+                  {settings.storeAddress}
                 </h3>
 
                 <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
-                  Ubicado en pleno corazón comercial de San Sebastián de Mariquita (Barrio Centro), en un sector seguro, accesible y de fácil llegada vehicular y peatonal.
+                  Ubicado en el corazón de El Poblado, un sector seguro, accesible y de fácil acceso vehicular y peatonal.
                 </p>
 
                 {/* Puntos de Referencia y Servicios */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-start gap-2.5 text-xs text-stone-600">
                     <CheckCircle2 size={16} className="text-[#d4af37] shrink-0 mt-0.5" />
-                    <span><strong>Puntos de referencia:</strong> Calle 6 # 3-55, Barrio Centro, a pocos pasos de la plaza principal y la Iglesia de la Ermita.</span>
+                    <span><strong>Puntos de referencia:</strong> A 2 cuadras del Parque de El Poblado y cerca de la Calle 10.</span>
                   </div>
                   <div className="flex items-start gap-2.5 text-xs text-stone-600">
                     <CheckCircle2 size={16} className="text-[#d4af37] shrink-0 mt-0.5" />
-                    <span><strong>Acceso vehicular y peatonal:</strong> Llegada directa desde la vía central y zona comercial de Mariquita.</span>
+                    <span><strong>Transporte público:</strong> A 7 minutos a pie de la Estación Metro Poblado (Línea A).</span>
                   </div>
                   <div className="flex items-start gap-2.5 text-xs text-stone-600">
                     <CheckCircle2 size={16} className="text-[#d4af37] shrink-0 mt-0.5" />
-                    <span><strong>Comodidad garantizada:</strong> Espacio exclusivo climatizado con bahía de parqueo cercana y atención personalizada.</span>
+                    <span><strong>Parqueadero gratuito:</strong> Contamos con bahía privada y vigilancia para clientas.</span>
                   </div>
                   <div className="flex items-start gap-2.5 text-xs text-stone-600">
                     <CheckCircle2 size={16} className="text-[#d4af37] shrink-0 mt-0.5" />
-                    <span><strong>Probadores de maquillaje:</strong> Prueba tonos de bases, iluminadores, labiales y tratamientos capilares en vivo.</span>
+                    <span><strong>Probadores de maquillaje:</strong> Prueba tonos de bases, iluminadores y fragancias en vivo.</span>
                   </div>
                 </div>
               </div>
@@ -566,7 +566,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ controller }) => {
                   className="w-full py-3 px-4 rounded-xl bg-stone-900 hover:bg-[#d4af37] text-white hover:text-black font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
                   <Navigation size={14} />
-                  <span>Abrir en Google Maps (Calle 6 #3-55, Mariquita)</span>
+                  <span>Abrir en Google Maps (Navegación GPS)</span>
                   <ExternalLink size={12} className="opacity-70" />
                 </a>
 
@@ -584,7 +584,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ controller }) => {
                   <a
                     href={`https://wa.me/${cleanWhatsappNumber}?text=Hola%20${encodeURIComponent(
                       settings.storeName
-                    )},%20voy%20de%20camino%20al%20showroom%20en%20Mariquita%20(Calle%206%20%233-55).%20%C2%BFMe%20pueden%20compartir%20su%20ubicaci%C3%B3n%20en%20tiempo%20real%3F`}
+                    )},%20voy%20de%20camino%20al%20showroom.%20%C2%BFMe%20pueden%20compartir%20su%20ubicaci%C3%B3n%20en%20tiempo%20real%3F`}
                     target="_blank"
                     rel="noreferrer"
                     className="py-2.5 px-3 rounded-xl border border-emerald-300 hover:bg-emerald-50 text-emerald-800 text-xs font-semibold text-center transition flex items-center justify-center gap-1.5 bg-white"
@@ -599,8 +599,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ controller }) => {
             {/* Columna Derecha: Iframe de Google Maps Integrado (7 cols) */}
             <div className="lg:col-span-7 bg-stone-100 relative min-h-[350px] sm:min-h-[420px]">
               <iframe
-                title={`Ubicación ${settings.storeName} - Mariquita, Tolima`}
-                src="https://maps.google.com/maps?q=Calle%206%20%233-55%20Mariquita%20Tolima%20Colombia&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                title={`Ubicación ${settings.storeName} - ${settings.storeCity}`}
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.368383921867!2d-75.57022062402128!3d6.214987026685897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e44282a5c9f5db7%3A0x6b1897c57c427352!2sCl.%2010%20%2340-20%2C%20El%20Poblado%2C%20Medell%C3%ADn%2C%20El%20Poblado%2C%20Medell%C3%ADn%2C%20Antioquia!5e0!3m2!1ses!2sco!4v1710000000000!5m2!1ses!2sco"
                 className="w-full h-full border-0 min-h-[350px] sm:min-h-[420px]"
                 loading="lazy"
                 allowFullScreen
@@ -612,7 +612,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ controller }) => {
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></div>
                 <div>
                   <p className="font-bold text-stone-900">{settings.storeName} Showroom</p>
-                  <p className="text-[10px] text-stone-500">Calle 6, #3-55, Mariquita, Barrio Centro</p>
+                  <p className="text-[10px] text-stone-500">{settings.storeAddress}</p>
                 </div>
               </div>
             </div>

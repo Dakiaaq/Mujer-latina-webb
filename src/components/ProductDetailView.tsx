@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { StoreController } from '../controllers/useStoreController';
 import { Product } from '../types';
 import { Star, ShoppingBag, Heart, ShieldCheck, Truck, Sparkles, ArrowLeft, CheckCircle2 } from 'lucide-react';
@@ -44,51 +44,46 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ controller
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'reviews'>('desc');
   const [addedToast, setAddedToast] = useState(false);
-  const [reviewSubmittedToast, setReviewSubmittedToast] = useState(false);
 
-  // Reviews form state & controller binding
-  const [reviewerName, setReviewerName] = useState(controller.currentUser?.fullName || '');
+  // Reviews form state
+  const [reviewerName, setReviewerName] = useState('');
   const [reviewerRating, setReviewerRating] = useState(5);
   const [reviewerComment, setReviewerComment] = useState('');
-
-  // Sincronizar nombre si el usuario inicia sesión
-  useEffect(() => {
-    if (controller.currentUser?.fullName && !reviewerName) {
-      setReviewerName(controller.currentUser.fullName);
-    }
-  }, [controller.currentUser]);
-
-  // Reiniciar imagen activa y cantidad al cambiar de producto
-  useEffect(() => {
-    setActiveImageIndex(0);
-    setQuantity(1);
-  }, [selectedProduct?.id]);
-
-  // Lista de reseñas del producto actual provenientes del controlador (localStorage + Supabase)
-  const productReviews = useMemo(() => {
-    return (controller.reviews || []).filter(
-      (r) => r.productId === selectedProduct.id || (r.productSku && r.productSku === selectedProduct.sku)
-    );
-  }, [controller.reviews, selectedProduct]);
+  const [reviewsList, setReviewsList] = useState([
+    {
+      id: 'rev-1',
+      name: 'Isabella Gómez',
+      rating: 5,
+      date: 'Hace 3 días',
+      comment: '¡Absolutamente maravilloso! La textura y el brillo que deja en el cabello es como salir de un salón de belleza de lujo. Repetiré sin duda.',
+    },
+    {
+      id: 'rev-2',
+      name: 'Mariana Duarte',
+      rating: 5,
+      date: 'Hace 1 semana',
+      comment: 'El aroma es delicioso y los resultados se notan desde la primera aplicación. Me encantó el empaque y la atención por WhatsApp.',
+    },
+  ]);
 
   const handleAddReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewerName.trim() || !reviewerComment.trim()) return;
 
-    controller.addReview({
-      productId: selectedProduct.id,
-      productSku: selectedProduct.sku,
-      productName: selectedProduct.name,
-      customerName: reviewerName.trim(),
-      userEmail: controller.currentUser?.email,
-      rating: reviewerRating,
-      comment: reviewerComment.trim(),
-    });
+    setReviewsList((prev) => [
+      {
+        id: `rev-${Date.now()}`,
+        name: reviewerName.trim(),
+        rating: reviewerRating,
+        date: 'Reciente',
+        comment: reviewerComment.trim(),
+      },
+      ...prev,
+    ]);
 
+    setReviewerName('');
     setReviewerComment('');
     setReviewerRating(5);
-    setReviewSubmittedToast(true);
-    setTimeout(() => setReviewSubmittedToast(false), 4000);
   };
 
   const handleAddToCart = () => {
@@ -209,7 +204,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ controller
                   ))}
                 </div>
                 <span className="font-bold text-stone-800">{selectedProduct.rating}</span>
-                <span className="text-stone-400 text-[11px] sm:text-xs">({productReviews.length + selectedProduct.reviewsCount} reseñas)</span>
+                <span className="text-stone-400 text-[11px] sm:text-xs">({reviewsList.length + selectedProduct.reviewsCount} reseñas)</span>
               </div>
 
               {/* Price & Stock */}
@@ -338,7 +333,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ controller
                   : 'border-transparent text-stone-400 hover:text-stone-700'
               }`}
             >
-              Reseñas ({productReviews.length})
+              Reseñas ({reviewsList.length})
             </button>
           </div>
 
@@ -365,58 +360,34 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ controller
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8">
                 {/* Reviews list */}
                 <div className="lg:col-span-7 space-y-3">
-                  {productReviews.length > 0 ? (
-                    productReviews.map((rev) => (
-                      <div key={rev.id} className="p-3 sm:p-4 rounded-xl border border-stone-200/90 bg-stone-50/80 space-y-1 sm:space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs sm:text-sm text-stone-900">{rev.customerName}</span>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
-                              Compra Verificada
-                            </span>
-                          </div>
-                          <span className="text-[10px] sm:text-xs text-stone-400">
-                            {new Date(rev.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
-                          </span>
-                        </div>
-                        <div className="flex text-[#d4af37]">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={12}
-                              className={i < rev.rating ? 'fill-[#d4af37]' : 'text-stone-300'}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-xs text-stone-600 leading-relaxed">{rev.comment}</p>
+                  {reviewsList.map((rev) => (
+                    <div key={rev.id} className="p-3 sm:p-4 rounded-xl border border-stone-100 bg-stone-50 space-y-1 sm:space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs sm:text-sm text-stone-900">{rev.name}</span>
+                        <span className="text-[10px] sm:text-xs text-stone-400">{rev.date}</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="p-6 rounded-2xl border border-dashed border-stone-300 bg-stone-50 text-center space-y-2">
-                      <p className="text-xs text-stone-600 font-medium">
-                        Aún no hay valoraciones para este producto.
-                      </p>
-                      <p className="text-[11px] text-stone-400">
-                        ¡Sé la primera en compartir tu experiencia y recibe atención preferencial!
-                      </p>
+                      <div className="flex text-[#d4af37]">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={12}
+                            className={i < rev.rating ? 'fill-[#d4af37]' : 'text-stone-300'}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-xs text-stone-600">{rev.comment}</p>
                     </div>
-                  )}
+                  ))}
                 </div>
 
                 {/* Form to leave a review */}
-                <div className="lg:col-span-5 bg-stone-50 p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border border-stone-200 relative">
-                  {reviewSubmittedToast && (
-                    <div className="mb-3 p-2.5 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg text-center animate-fadeIn">
-                      ¡Tu reseña ha sido guardada y publicada exitosamente!
-                    </div>
-                  )}
-
+                <div className="lg:col-span-5 bg-stone-50 p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border border-stone-200">
                   <h4 className="font-serif-title text-base sm:text-lg font-bold text-stone-900 mb-2 sm:mb-3">
                     Deja tu Valoración
                   </h4>
                   <form onSubmit={handleAddReview} className="space-y-2.5 sm:space-y-4 text-xs sm:text-sm">
                     <div>
-                      <label className="block text-stone-600 font-semibold mb-1 text-[11px] sm:text-xs">Tu Nombre Completo</label>
+                      <label className="block text-stone-600 font-semibold mb-1 text-[11px] sm:text-xs">Tu Nombre</label>
                       <input
                         type="text"
                         required
@@ -466,7 +437,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ controller
                       type="submit"
                       className="w-full py-2 bg-stone-900 hover:bg-[#d4af37] text-white hover:text-black font-semibold rounded-lg text-xs transition cursor-pointer"
                     >
-                      Publicar Reseña en la Tienda
+                      Publicar Reseña
                     </button>
                   </form>
                 </div>

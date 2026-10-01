@@ -12,10 +12,7 @@ import {
   User, 
   MapPin, 
   CheckCircle2, 
-  ArrowLeft,
-  Sparkles,
-  ShieldCheck,
-  Check
+  ArrowLeft 
 } from 'lucide-react';
 
 interface LoginModalProps {
@@ -283,7 +280,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ controller }) => {
                 setRegErrors({});
                 setModalMode('login');
               }}
-              className={`flex-1 py-2 text-[11px] sm:text-xs font-bold rounded-full transition flex items-center justify-center gap-1 cursor-pointer ${
+              className={`flex-1 py-2 text-xs font-bold rounded-full transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 modalMode === 'login'
                   ? 'bg-white text-stone-900 shadow-xs border border-stone-200'
                   : 'text-stone-500 hover:text-stone-900'
@@ -299,7 +296,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ controller }) => {
                 setRegErrors({});
                 setModalMode('register');
               }}
-              className={`flex-1 py-2 text-[11px] sm:text-xs font-bold rounded-full transition flex items-center justify-center gap-1 cursor-pointer ${
+              className={`flex-1 py-2 text-xs font-bold rounded-full transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 modalMode === 'register'
                   ? 'bg-white text-stone-900 shadow-xs border border-stone-200'
                   : 'text-stone-500 hover:text-stone-900'
@@ -315,27 +312,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({ controller }) => {
         {/* 1. VISTA: INICIAR SESIÓN                                          */}
         {/* ================================================================= */}
         {modalMode === 'login' && (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {/* Header */}
-            <div className="text-center space-y-1.5">
-              <div className="w-11 h-11 mx-auto rounded-full bg-[#d4af37]/15 border border-[#d4af37] text-[#b58d24] flex items-center justify-center font-serif font-bold text-lg shadow-sm">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 mx-auto rounded-full bg-[#d4af37]/15 border border-[#d4af37] text-[#b58d24] flex items-center justify-center font-serif font-bold text-xl shadow-sm">
                 M
               </div>
-              <h2 className="font-serif-title text-2xl font-bold text-stone-900 tracking-wide">
+              <h2 className="font-serif-title text-2xl sm:text-3xl font-bold text-stone-900 tracking-wide">
                 Iniciar Sesión
               </h2>
-              <p className="text-stone-500 text-xs">
-                Ingresa tus credenciales
+              <p className="text-stone-500 text-xs sm:text-sm">
+                Ingresa tus credenciales para acceder a la plataforma
               </p>
             </div>
 
             {/* Error Alert */}
             {loginError && (
               <div 
-                className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2 animate-fadeIn"
+                className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2.5 animate-fadeIn"
                 id="login-error-alert"
               >
-                <AlertCircle size={15} className="text-rose-500 shrink-0" />
+                <AlertCircle size={16} className="text-rose-500 flex-shrink-0" />
                 <span className="font-medium">{loginError}</span>
               </div>
             )}

@@ -1,16 +1,5 @@
-import { getSupabaseClient, ensureSupabaseAuthSession } from './supabaseClient';
-import { Product, Category, Order, StoreSettings, UserProfile, Review, WishlistRecord } from '../types';
-
-export function generateSecureUuid(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
+import { getSupabaseClient } from './supabaseClient';
+import { Product, Category, Order, StoreSettings, UserProfile } from '../types';
 
 /**
  * ============================================================================
@@ -433,7 +422,6 @@ export async function fetchOrdersFromSupabase(): Promise<Order[] | null> {
   if (!client) return null;
 
   try {
-    await ensureSupabaseAuthSession();
     const { data, error } = await client
       .from('orders')
       .select('*, order_items (*)')
@@ -495,13 +483,8 @@ export async function insertOrderToSupabase(
   if (!client) return { success: false, error: 'Cliente de Supabase no disponible' };
 
   try {
-    // Generate UUID for order so we can reference it in order_items without calling .select()
-    const isOrderUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.id);
-    const orderUuid = isOrderUuid ? order.id : generateSecureUuid();
-
     // 1. Insertar Cabecera de Orden
     const orderPayload = {
-      id: orderUuid,
       order_number: order.id,
       user_id: order.userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.userId) 
         ? order.userId 
@@ -528,9 +511,11 @@ export async function insertOrderToSupabase(
       admin_notes: order.notes || null,
     };
 
-    const { error: orderError } = await client
+    const { data: createdOrder, error: orderError } = await client
       .from('orders')
-      .insert(orderPayload);
+      .insert(orderPayload)
+      .select('id, order_number')
+      .single();
 
     if (orderError) {
       console.warn('⚠️ Error inserting order in Supabase:', orderError.message);
@@ -538,10 +523,9 @@ export async function insertOrderToSupabase(
     }
 
     // 2. Insertar Detalles de Orden (order_items)
-    if (order.items && order.items.length > 0) {
+    if (order.items && order.items.length > 0 && createdOrder?.id) {
       const itemsPayload = order.items.map((item) => ({
-        id: generateSecureUuid(),
-        order_id: orderUuid,
+        order_id: createdOrder.id,
         product_id: item.productId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.productId)
           ? item.productId
           : null,
@@ -562,7 +546,7 @@ export async function insertOrderToSupabase(
       }
     }
 
-    return { success: true, data: { id: orderUuid, order_number: order.id } };
+    return { success: true, data: createdOrder };
   } catch (err: any) {
     return { success: false, error: err?.message || String(err) };
   }
@@ -830,28 +814,29 @@ export async function upsertProfileToSupabase(
   if (!client) return { success: false, error: 'Cliente de Supabase no disponible' };
 
   try {
-    await ensureSupabaseAuthSession();
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profile.id);
-    const profileId = isUuid ? profile.id : generateSecureUuid();
-
     const payload: Record<string, any> = {
-      id: profileId,
-      email: profile.email.toLowerCase().trim(),
+      email: profile.email.toLowerCase(),
       full_name: profile.fullName,
       role: profile.role || 'customer',
       status: profile.status || 'active',
-      document_type: profile.documentType || 'CC',
+      document_type: profile.documentType || null,
       document_number: profile.documentNumber || null,
       phone: profile.phone || null,
-      department: profile.department || 'Tolima',
-      city: profile.city || 'Mariquita',
-      address: profile.address || 'Barrio Centro',
+      department: profile.department || null,
+      city: profile.city || null,
+      address: profile.address || null,
       avatar_url: profile.avatarUrl || null,
     };
 
+    // Si el ID es un UUID válido de Supabase, incluirlo en la clave primaria
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profile.id);
+    if (isUuid) {
+      payload.id = profile.id;
+    }
+
     const { error } = await client
       .from('profiles')
-      .upsert(payload, { onConflict: 'email' });
+      .upsert(payload, { onConflict: isUuid ? 'id' : 'email' });
 
     if (error) {
       console.warn('⚠️ Advertencia al guardar perfil en Supabase:', error.message);
@@ -869,7 +854,6 @@ export async function fetchProfilesFromSupabase(): Promise<UserProfile[] | null>
   if (!client) return null;
 
   try {
-    await ensureSupabaseAuthSession();
     const { data, error } = await client
       .from('profiles')
       .select('*')
@@ -899,382 +883,25 @@ export async function fetchProfilesFromSupabase(): Promise<UserProfile[] | null>
 }
 
 export async function deleteProfileFromSupabase(
-  userIdOrEmail: string,
-  email?: string
+  userIdOrEmail: string
 ): Promise<{ success: boolean; error?: string }> {
   const client = getSupabaseClient();
   if (!client) return { success: false, error: 'Cliente de Supabase no disponible' };
 
   try {
-    await ensureSupabaseAuthSession();
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userIdOrEmail);
-    const cleanEmail = (email || (!isUuid ? userIdOrEmail : '')).toLowerCase().trim();
-
-    // Resolver UUID en profiles si existe por id o por email para desvincular llaves foráneas sin borrar pedidos/reseñas/favoritos
-    let targetUuid: string | null = isUuid ? userIdOrEmail : null;
-    if (!targetUuid && cleanEmail) {
-      const { data: existingProfile } = await client
-        .from('profiles')
-        .select('id')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-      if (existingProfile?.id) {
-        targetUuid = existingProfile.id;
-      }
-    }
-
-    if (targetUuid) {
-      // Desvincular user_id (SET NULL) para conservar pedidos, reseñas y favoritos intactos
-      await client.from('orders').update({ user_id: null }).eq('user_id', targetUuid);
-      await client.from('reviews').update({ user_id: null }).eq('user_id', targetUuid);
-      await client.from('wishlist').update({ user_id: null }).eq('user_id', targetUuid);
-
-      const { error: idErr } = await client.from('profiles').delete().eq('id', targetUuid);
-      if (idErr) {
-        console.warn('⚠️ Error al eliminar perfil por ID en Supabase:', idErr.message);
-        return { success: false, error: idErr.message };
-      }
-    }
-
-    if (cleanEmail) {
-      const { error: emailErr } = await client.from('profiles').delete().eq('email', cleanEmail);
-      if (emailErr) {
-        console.warn('⚠️ Error al eliminar perfil por email en Supabase:', emailErr.message);
-        return { success: false, error: emailErr.message };
-      }
-    }
-
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err?.message || String(err) };
-  }
-}
-
-// ============================================================================
-// 6. RESEÑAS DE PRODUCTO (REVIEWS)
-// ============================================================================
-
-export async function fetchReviewsFromSupabase(): Promise<Review[] | null> {
-  const client = getSupabaseClient();
-  if (!client) return null;
-
-  try {
-    await ensureSupabaseAuthSession();
-    const { data, error } = await client
-      .from('reviews')
-      .select('*, products(id, name, sku)')
-      .order('created_at', { ascending: false });
+    const query = client.from('profiles').delete();
+    const { error } = isUuid
+      ? await query.eq('id', userIdOrEmail)
+      : await query.eq('email', userIdOrEmail.toLowerCase().trim());
 
     if (error) {
-      console.warn('⚠️ Error al consultar reviews en Supabase:', error.message);
-      return null;
-    }
-
-    if (!data || data.length === 0) return null;
-
-    return data.map((r: any) => ({
-      id: r.id,
-      productId: r.product_id,
-      productName: r.products?.name,
-      productSku: r.products?.sku,
-      customerName: r.customer_name || 'Cliente Verificado',
-      userEmail: r.user_email || undefined,
-      rating: Number(r.rating || 5),
-      comment: r.comment || '',
-      createdAt: r.created_at,
-      isVerifiedPurchase: Boolean(r.is_verified_purchase ?? true),
-      isApproved: Boolean(r.is_approved ?? true),
-    }));
-  } catch (err) {
-    console.warn('⚠️ Error communicating with Supabase for reviews:', err);
-    return null;
-  }
-}
-
-export async function insertReviewToSupabase(
-  review: Review,
-  fallbackProductSku?: string
-): Promise<{ success: boolean; data?: any; error?: string }> {
-  const client = getSupabaseClient();
-  if (!client) return { success: false, error: 'Cliente de Supabase no disponible' };
-
-  try {
-    await ensureSupabaseAuthSession();
-    let resolvedProductId = review.productId;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedProductId);
-    if (!isUuid) {
-      const skuToSearch = review.productSku || fallbackProductSku;
-      if (skuToSearch) {
-        const { data: prod } = await client
-          .from('products')
-          .select('id')
-          .eq('sku', skuToSearch)
-          .maybeSingle();
-        if (prod?.id) {
-          resolvedProductId = prod.id;
-        }
-      }
-    }
-
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedProductId)) {
-      const { data: anyProd } = await client.from('products').select('id').limit(1).maybeSingle();
-      if (anyProd?.id) {
-        resolvedProductId = anyProd.id;
-      }
-    }
-
-    const isReviewUuid = review.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(review.id);
-    const reviewId = isReviewUuid ? review.id : generateSecureUuid();
-
-    const payload: any = {
-      id: reviewId,
-      product_id: resolvedProductId,
-      customer_name: review.customerName,
-      rating: Math.min(5, Math.max(1, review.rating)),
-      comment: review.comment,
-      is_approved: true,
-      is_verified_purchase: review.isVerifiedPurchase ?? true,
-    };
-
-    const { error } = await client.from('reviews').insert(payload);
-    if (error) {
-      console.warn('⚠️ Error al insertar reseña en Supabase:', error.message);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, data: payload };
-  } catch (err: any) {
-    return { success: false, error: err?.message || String(err) };
-  }
-}
-
-// ============================================================================
-// 7. LISTA DE DESEOS (WISHLIST_ITEMS)
-// ============================================================================
-
-export async function fetchWishlistFromSupabase(userId?: string): Promise<WishlistRecord[] | null> {
-  const client = getSupabaseClient();
-  if (!client) return null;
-
-  try {
-    await ensureSupabaseAuthSession();
-    let query = client.from('wishlist_items').select('*, products(id, name, sku, price, image_url)');
-    if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
-      query = query.eq('user_id', userId);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.warn('⚠️ Error al consultar wishlist_items en Supabase:', error.message);
-      return null;
-    }
-
-    if (!data || data.length === 0) return null;
-
-    return data.map((w: any) => ({
-      id: w.id,
-      userId: w.user_id,
-      userEmail: w.user_email || undefined,
-      userName: w.user_name || undefined,
-      productId: w.product_id,
-      productName: w.products?.name || 'Producto Mujer Latina',
-      productSku: w.products?.sku,
-      productPrice: Number(w.products?.price || 0),
-      imageUrl: w.products?.image_url,
-      addedAt: w.created_at || new Date().toISOString(),
-    }));
-  } catch (err) {
-    console.warn('⚠️ Error communicating with Supabase for wishlist_items:', err);
-    return null;
-  }
-}
-
-export async function insertWishlistToSupabase(
-  item: WishlistRecord,
-  fallbackProductSku?: string
-): Promise<{ success: boolean; data?: any; error?: string }> {
-  const client = getSupabaseClient();
-  if (!client) return { success: false, error: 'Cliente de Supabase no disponible' };
-
-  try {
-    await ensureSupabaseAuthSession();
-    let resolvedProductId = item.productId;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedProductId);
-    if (!isUuid) {
-      const skuToSearch = item.productSku || fallbackProductSku;
-      if (skuToSearch) {
-        const { data: prod } = await client
-          .from('products')
-          .select('id')
-          .eq('sku', skuToSearch)
-          .maybeSingle();
-        if (prod?.id) {
-          resolvedProductId = prod.id;
-        }
-      }
-    }
-
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedProductId)) {
-      const { data: anyProd } = await client.from('products').select('id').limit(1).maybeSingle();
-      if (anyProd?.id) {
-        resolvedProductId = anyProd.id;
-      }
-    }
-
-    const isUserUuid = item.userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.userId);
-    const isItemUuid = item.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
-    const wishId = isItemUuid ? item.id : generateSecureUuid();
-
-    const payload: any = {
-      id: wishId,
-      product_id: resolvedProductId,
-      user_id: isUserUuid ? item.userId : null,
-    };
-
-    const { error } = await client.from('wishlist_items').insert(payload);
-    if (error) {
-      console.warn('⚠️ Error al insertar wishlist_item en Supabase:', error.message);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, data: payload };
-  } catch (err: any) {
-    return { success: false, error: err?.message || String(err) };
-  }
-}
-
-export async function deleteWishlistFromSupabase(
-  productId: string,
-  userId?: string
-): Promise<{ success: boolean; error?: string }> {
-  const client = getSupabaseClient();
-  if (!client) return { success: false, error: 'Cliente de Supabase no disponible' };
-
-  try {
-    await ensureSupabaseAuthSession();
-    let query = client.from('wishlist_items').delete();
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
-    if (isUuid) {
-      query = query.eq('product_id', productId);
-    }
-    if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
-      query = query.eq('user_id', userId);
-    }
-
-    const { error } = await query;
-    if (error) {
-      console.warn('⚠️ Error al eliminar wishlist_item en Supabase:', error.message);
+      console.warn('⚠️ Error al eliminar perfil en Supabase:', error.message);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message || String(err) };
-  }
-}
-
-// ============================================================================
-// 8. EXPORTACIONES MASIVAS Y SINCRONIZACIÓN DE BASE DE DATOS
-// ============================================================================
-
-export async function exportOrdersToSupabase(
-  ordersList: Order[]
-): Promise<{ success: boolean; count: number; error?: string }> {
-  const client = getSupabaseClient();
-  if (!client) return { success: false, count: 0, error: 'Cliente de Supabase no configurado' };
-
-  let successCount = 0;
-  for (const ord of ordersList) {
-    const res = await insertOrderToSupabase(ord);
-    if (res.success) {
-      successCount++;
-    }
-  }
-
-  return { success: successCount > 0, count: successCount };
-}
-
-export async function exportProfilesToSupabase(
-  profilesList: UserProfile[]
-): Promise<{ success: boolean; count: number; error?: string }> {
-  const client = getSupabaseClient();
-  if (!client) return { success: false, count: 0, error: 'Cliente de Supabase no configurado' };
-
-  let successCount = 0;
-  for (const prof of profilesList) {
-    const res = await upsertProfileToSupabase(prof);
-    if (res.success) {
-      successCount++;
-    }
-  }
-
-  return { success: successCount > 0, count: successCount };
-}
-
-export async function exportReviewsToSupabase(
-  reviewsList: Review[]
-): Promise<{ success: boolean; count: number; error?: string }> {
-  const client = getSupabaseClient();
-  if (!client) return { success: false, count: 0, error: 'Cliente de Supabase no configurado' };
-
-  let successCount = 0;
-  for (const rev of reviewsList) {
-    const res = await insertReviewToSupabase(rev);
-    if (res.success) {
-      successCount++;
-    }
-  }
-
-  return { success: successCount > 0, count: successCount };
-}
-
-export async function exportWishlistToSupabase(
-  items: WishlistRecord[]
-): Promise<{ success: boolean; count: number; error?: string }> {
-  const client = getSupabaseClient();
-  if (!client) return { success: false, count: 0, error: 'Cliente de Supabase no configurado' };
-
-  let successCount = 0;
-  for (const item of items) {
-    const res = await insertWishlistToSupabase(item);
-    if (res.success) {
-      successCount++;
-    }
-  }
-
-  return { success: successCount > 0, count: successCount };
-}
-
-export async function fetchSupabaseTableCounts(): Promise<{
-  products: number;
-  categories: number;
-  orders: number;
-  profiles: number;
-  reviews: number;
-  wishlist: number;
-}> {
-  const client = getSupabaseClient();
-  if (!client) return { products: 0, categories: 0, orders: 0, profiles: 0, reviews: 0, wishlist: 0 };
-  try {
-    await ensureSupabaseAuthSession();
-    const [p, c, o, pr, r, w] = await Promise.all([
-      client.from('products').select('*', { count: 'exact', head: true }),
-      client.from('categories').select('*', { count: 'exact', head: true }),
-      client.from('orders').select('*', { count: 'exact', head: true }),
-      client.from('profiles').select('*', { count: 'exact', head: true }),
-      client.from('reviews').select('*', { count: 'exact', head: true }),
-      client.from('wishlist_items').select('*', { count: 'exact', head: true }),
-    ]);
-    return {
-      products: p.count ?? 0,
-      categories: c.count ?? 0,
-      orders: o.count ?? 0,
-      profiles: pr.count ?? 0,
-      reviews: r.count ?? 0,
-      wishlist: w.count ?? 0,
-    };
-  } catch (e) {
-    console.warn('Error fetching table counts:', e);
-    return { products: 0, categories: 0, orders: 0, profiles: 0, reviews: 0, wishlist: 0 };
   }
 }

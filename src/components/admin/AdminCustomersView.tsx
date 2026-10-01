@@ -8,7 +8,6 @@ import {
   Download, 
   Eye, 
   Pencil, 
-  Trash2,
   X, 
   Send, 
   Check, 
@@ -34,7 +33,7 @@ interface AdminCustomersViewProps {
 }
 
 export const AdminCustomersView: React.FC<AdminCustomersViewProps> = ({ controller }) => {
-  const { customers, addCustomer, updateCustomer, deleteCustomer, orders } = controller;
+  const { customers, addCustomer, updateCustomer, orders } = controller;
 
   // Search & Filter state
   const [search, setSearch] = useState('');
@@ -51,13 +50,11 @@ export const AdminCustomersView: React.FC<AdminCustomersViewProps> = ({ controll
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
-  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Lock body scroll cleanly when a customer modal is open
   useEffect(() => {
-    if (showNewModal || editingCustomer || viewingCustomer || deletingCustomer) {
+    if (showNewModal || editingCustomer || viewingCustomer) {
       const prevOverflow = document.body.style.overflow;
       const prevOverscroll = document.body.style.overscrollBehavior;
       document.body.style.overflow = 'hidden';
@@ -67,7 +64,7 @@ export const AdminCustomersView: React.FC<AdminCustomersViewProps> = ({ controll
         document.body.style.overscrollBehavior = prevOverscroll;
       };
     }
-  }, [showNewModal, editingCustomer, viewingCustomer, deletingCustomer]);
+  }, [showNewModal, editingCustomer, viewingCustomer]);
 
   // Form states for New / Edit Customer
   const [formName, setFormName] = useState('');
@@ -319,23 +316,6 @@ export const AdminCustomersView: React.FC<AdminCustomersViewProps> = ({ controll
 
     setEditingCustomer(null);
     notify(`Datos de "${formName.trim()}" actualizados con éxito`);
-  };
-
-  // Confirm and Execute Delete Customer in Database
-  const handleConfirmDeleteCustomer = async () => {
-    if (!deletingCustomer) return;
-    setIsDeleting(true);
-    try {
-      const targetName = deletingCustomer.name;
-      await deleteCustomer(deletingCustomer.id, deletingCustomer.email);
-      if (viewingCustomer?.id === deletingCustomer.id) {
-        setViewingCustomer(null);
-      }
-      setDeletingCustomer(null);
-      notify(`Usuario "${targetName}" eliminado correctamente de la base de datos`);
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   // Helper for initial avatar initials
@@ -678,16 +658,6 @@ export const AdminCustomersView: React.FC<AdminCustomersViewProps> = ({ controll
                             aria-label="Editar cliente"
                           >
                             <Pencil size={16} />
-                          </button>
-
-                          {/* Icon: Eliminar Usuario */}
-                          <button
-                            onClick={() => setDeletingCustomer(cust)}
-                            className="p-2 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                            title="Eliminar usuario"
-                            aria-label="Eliminar usuario"
-                          >
-                            <Trash2 size={16} />
                           </button>
 
                         </div>
@@ -1258,132 +1228,26 @@ export const AdminCustomersView: React.FC<AdminCustomersViewProps> = ({ controll
 
             {/* Modal Footer */}
             <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const cust = viewingCustomer;
-                    setViewingCustomer(null);
-                    openEditModal(cust);
-                  }}
-                  className="px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-stone-900 hover:bg-stone-200/60 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Pencil size={13} />
-                  <span>Editar datos</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const cust = viewingCustomer;
-                    setViewingCustomer(null);
-                    setDeletingCustomer(cust);
-                  }}
-                  className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Trash2 size={13} />
-                  <span>Eliminar usuario</span>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  const cust = viewingCustomer;
+                  setViewingCustomer(null);
+                  openEditModal(cust);
+                }}
+                className="px-3 py-1.5 text-xs font-semibold text-stone-700 hover:text-stone-900 hover:bg-stone-200/60 rounded-lg transition flex items-center gap-1.5"
+              >
+                <Pencil size={13} />
+                <span>Editar datos</span>
+              </button>
 
               <button
                 onClick={() => setViewingCustomer(null)}
-                className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition"
               >
                 Cerrar
               </button>
             </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: CONFIRMACIÓN PARA ELIMINAR USUARIO */}
-      {/* ========================================================================= */}
-      {deletingCustomer && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn overscroll-contain"
-          onClick={() => !isDeleting && setDeletingCustomer(null)}
-          onTouchMove={(e) => {
-            if (e.target === e.currentTarget) e.preventDefault();
-          }}
-        >
-          <div
-            className="bg-white rounded-2xl border border-stone-200 max-w-md w-full p-6 shadow-2xl space-y-5 overscroll-contain"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 flex-shrink-0">
-                  <Trash2 size={22} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-stone-900">
-                    ¿Eliminar usuario?
-                  </h3>
-                  <p className="text-xs text-stone-500 mt-0.5">
-                    Confirma la eliminación de este usuario en la base de datos
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => !isDeleting && setDeletingCustomer(null)}
-                disabled={isDeleting}
-                className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-3.5 bg-stone-50 rounded-xl border border-stone-200 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-stone-200 bg-stone-100 flex-shrink-0 flex items-center justify-center">
-                {deletingCustomer.avatarUrl ? (
-                  <img
-                    src={deletingCustomer.avatarUrl}
-                    alt={deletingCustomer.name}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <span className="text-xs font-bold text-stone-600">
-                    {getInitials(deletingCustomer.name)}
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-stone-900 truncate">
-                  {deletingCustomer.name}
-                </p>
-                <p className="text-[11px] text-stone-500 truncate">
-                  {deletingCustomer.email}
-                </p>
-                <p className="text-[10px] text-stone-400 font-mono mt-0.5">
-                  ID: {deletingCustomer.id}
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-stone-600 leading-relaxed">
-              ¿Estás seguro de que deseas eliminar únicamente a <strong>{deletingCustomer.name}</strong>? Esta acción eliminará al usuario de la base de datos sin afectar productos, pedidos, reseñas ni datos de otros usuarios.
-            </p>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-stone-100">
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={() => setDeletingCustomer(null)}
-                className="px-4 py-2 rounded-xl border border-stone-200 text-stone-700 hover:bg-stone-50 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={handleConfirmDeleteCustomer}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
-              >
-                <Trash2 size={14} />
-                <span>{isDeleting ? 'Eliminando...' : 'Sí, eliminar usuario'}</span>
-              </button>
-            </div>
           </div>
         </div>
       )}

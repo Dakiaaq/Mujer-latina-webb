@@ -67,191 +67,46 @@ export async function hashPassword(password: string): Promise<string> {
   return [h0, h1, h2, h3].map((x) => x.toString(16).padStart(8, '0')).join('') + 'sha256fallback';
 }
 
-export const PRESET_DEMO_USERS: Array<{
-  profile: UserProfile;
-  label: string;
-  badge: string;
-  badgeColor: string;
-  passwordHint: string;
-  description: string;
-}> = [
-  {
-    profile: ADMIN_USER_PROFILE,
-    label: 'Administradora General',
-    badge: 'Super Admin',
-    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
-    passwordHint: 'Admin2026!',
-    description: 'Acceso total a la Suite Administrativa, métricas, pedidos y control de inventario.',
-  },
-  {
-    profile: DEMO_USER_PROFILE,
-    label: 'Valentina Restrepo',
-    badge: 'Clienta VIP',
-    badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
-    passwordHint: 'Cliente2026!',
-    description: 'Clienta frecuente con historial de compras de alta gama y créditos acumulados.',
-  },
-  {
-    profile: {
-      id: 'usr-camila-02',
-      email: 'camila@mujerlatina.com',
-      fullName: 'Camila Gómez',
-      role: 'customer',
-      phone: '+57 314 220 9988',
-      documentType: 'Cédula de ciudadanía (C.C.)',
-      documentNumber: '1053812345',
-      documentId: 'C.C. 1.053.812.345',
-      department: 'Tolima',
-      city: 'Mariquita',
-      address: 'Carrera 4 # 5-20 Barrio Centro',
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
-      memberSince: '2025',
-    },
-    label: 'Camila Gómez',
-    badge: 'Nueva Clienta',
-    badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-    passwordHint: 'Cliente2026!',
-    description: 'Residente en Mariquita (Barrio Centro), aficionada a cosméticos y labiales.',
-  },
-  {
-    profile: {
-      id: 'usr-laura-03',
-      email: 'laura.morales@mujerlatina.com',
-      fullName: 'Laura Marcela Morales',
-      role: 'customer',
-      phone: '+57 318 765 4321',
-      documentType: 'Cédula de ciudadanía (C.C.)',
-      documentNumber: '65789012',
-      documentId: 'C.C. 65.789.012',
-      department: 'Tolima',
-      city: 'Ibagué',
-      address: 'Carrera 5 # 37-25 Barrio Cádiz',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
-      memberSince: '2024',
-    },
-    label: 'Laura Morales',
-    badge: 'Mayorista / Salón',
-    badgeColor: 'bg-blue-100 text-blue-900 border-blue-300',
-    passwordHint: 'Cliente2026!',
-    description: 'Estilista profesional, realiza pedidos al por mayor de tintes y tratamientos.',
-  },
-  {
-    profile: {
-      id: 'usr-elena-04',
-      email: 'elena.mendoza@mujerlatina.com',
-      fullName: 'Elena Mendoza',
-      role: 'customer',
-      phone: '+57 320 401 7723',
-      documentType: 'Cédula de ciudadanía (C.C.)',
-      documentNumber: '37890123',
-      documentId: 'C.C. 37.890.123',
-      department: 'Santander',
-      city: 'Bucaramanga',
-      address: 'Calle 35 # 27-09 Cabecera',
-      avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
-      memberSince: '2024',
-    },
-    label: 'Elena Mendoza',
-    badge: 'Cuidado Capilar',
-    badgeColor: 'bg-rose-100 text-rose-900 border-rose-300',
-    passwordHint: 'Cliente2026!',
-    description: 'Compradora fiel de la línea capilar Oro 24K y tratamientos botánicos.',
-  },
-];
-
 /**
  * Semilla inicial de usuarios en la tabla `usuarios` (almacenada en localStorage)
  */
 function getInitialSeedUsers(): StoredUser[] {
+  // Precomputed SHA-256 hashes para las cuentas iniciales
   return [
-    {
-      id: ADMIN_USER_PROFILE.id,
-      email: ADMIN_USER_PROFILE.email.toLowerCase(),
-      fullName: ADMIN_USER_PROFILE.fullName,
-      role: 'admin',
-      status: 'active',
-      passwordHash: 'f013cc026f954c575465dbd95c31e2c51feffdc6c9c6ec1bdff367b167a0b323', // Admin2026!
-      documentType: 'Cédula de ciudadanía (C.C.)',
-      documentNumber: '52987223',
-      documentId: 'C.C. 52987223',
-      phone: ADMIN_USER_PROFILE.phone || '+57 320 987 2232',
-      department: 'Tolima',
-      city: 'Mariquita',
-      address: 'Calle 6 #3-55, Barrio Centro, Sede Principal',
-      memberSince: '2023',
-      createdAt: '2023-08-01T10:00:00.000Z',
-    },
     {
       id: DEMO_USER_PROFILE.id,
       email: DEMO_USER_PROFILE.email.toLowerCase(),
       fullName: DEMO_USER_PROFILE.fullName,
       role: 'customer',
       status: 'active',
-      passwordHash: '95da9d51c39ba42c76b87f9b489be7def6060f112f3b6ae5e0fc28d7fda59fae', // Cliente2026!
+      passwordHash: 'e01235a901844ff72c72b2c89fbf0e8ad4a631bf3cbceaa26a9fb462b489da15', // Usuario2026!
       documentType: 'Cédula de ciudadanía (C.C.)',
       documentNumber: '1036944218',
       documentId: 'C.C. 1036944218',
       phone: DEMO_USER_PROFILE.phone || '+57 312 456 7890',
-      department: 'Tolima',
-      city: 'Mariquita',
-      address: 'Calle 6 # 3-55 Barrio Centro',
+      department: DEMO_USER_PROFILE.department || 'Antioquia',
+      city: DEMO_USER_PROFILE.city || 'Medellín',
+      address: DEMO_USER_PROFILE.address || 'Cra 45 # 12-34, Apto 501',
       avatarUrl: DEMO_USER_PROFILE.avatarUrl,
       memberSince: '2024',
       createdAt: '2024-01-15T10:00:00.000Z',
     },
     {
-      id: 'usr-camila-02',
-      email: 'camila@mujerlatina.com',
-      fullName: 'Camila Gómez',
-      role: 'customer',
+      id: ADMIN_USER_PROFILE.id,
+      email: ADMIN_USER_PROFILE.email.toLowerCase(),
+      fullName: ADMIN_USER_PROFILE.fullName,
+      role: 'admin',
       status: 'active',
-      passwordHash: '95da9d51c39ba42c76b87f9b489be7def6060f112f3b6ae5e0fc28d7fda59fae', // Cliente2026!
+      passwordHash: '3976865bfd2a3f721d015c7a40b33671239f6df84976cf3832c32cf9eb6c0ab3', // Admin2026!
       documentType: 'Cédula de ciudadanía (C.C.)',
-      documentNumber: '1053812345',
-      documentId: 'C.C. 1.053.812.345',
-      phone: '+57 314 220 9988',
-      department: 'Tolima',
-      city: 'Mariquita',
-      address: 'Carrera 4 # 5-20 Barrio Centro',
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
-      memberSince: '2025',
-      createdAt: '2025-01-10T12:00:00.000Z',
-    },
-    {
-      id: 'usr-laura-03',
-      email: 'laura.morales@mujerlatina.com',
-      fullName: 'Laura Marcela Morales',
-      role: 'customer',
-      status: 'active',
-      passwordHash: '95da9d51c39ba42c76b87f9b489be7def6060f112f3b6ae5e0fc28d7fda59fae', // Cliente2026!
-      documentType: 'Cédula de ciudadanía (C.C.)',
-      documentNumber: '65789012',
-      documentId: 'C.C. 65.789.012',
-      phone: '+57 318 765 4321',
-      department: 'Tolima',
-      city: 'Ibagué',
-      address: 'Carrera 5 # 37-25 Barrio Cádiz',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
-      memberSince: '2024',
-      createdAt: '2024-03-20T15:00:00.000Z',
-    },
-    {
-      id: 'usr-elena-04',
-      email: 'elena.mendoza@mujerlatina.com',
-      fullName: 'Elena Mendoza',
-      role: 'customer',
-      status: 'active',
-      passwordHash: '95da9d51c39ba42c76b87f9b489be7def6060f112f3b6ae5e0fc28d7fda59fae', // Cliente2026!
-      documentType: 'Cédula de ciudadanía (C.C.)',
-      documentNumber: '37890123',
-      documentId: 'C.C. 37.890.123',
-      phone: '+57 320 401 7723',
-      department: 'Santander',
-      city: 'Bucaramanga',
-      address: 'Calle 35 # 27-09 Cabecera',
-      avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
-      memberSince: '2024',
-      createdAt: '2024-05-18T10:30:00.000Z',
+      documentNumber: '52987223',
+      documentId: 'C.C. 52987223',
+      phone: ADMIN_USER_PROFILE.phone || '+57 320 987 2232',
+      department: ADMIN_USER_PROFILE.department || 'Cundinamarca',
+      city: ADMIN_USER_PROFILE.city || 'Bogotá',
+      address: ADMIN_USER_PROFILE.address || 'Sede Principal Calle 93 # 11-45',
+      memberSince: '2023',
+      createdAt: '2023-08-01T10:00:00.000Z',
     },
   ];
 }
@@ -269,7 +124,7 @@ export function getStoredUsers(): StoredUser[] {
       return initial;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
+    if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed;
     }
     const initial = getInitialSeedUsers();
@@ -351,12 +206,14 @@ export async function authenticateUser(email: string, password: string): Promise
   // Verificar hash de contraseña
   const inputHash = await hashPassword(cleanPassword);
   
-  // Acepta hash coincidente o contraseñas maestras de demostración
-  const isDemoMasterPassword = cleanPassword === 'Usuario2026!' || cleanPassword === 'Admin2026!' || cleanPassword === 'Cliente2026!';
+  // Acepta hash coincidente o contraseñas iniciales conocidas
+  const isDemoUser = cleanEmail === 'usuario@mujerlatina.com' && cleanPassword === 'Usuario2026!';
+  const isAdminUser = cleanEmail === 'admin@mujerlatina.com' && cleanPassword === 'Admin2026!';
   const isHashMatch = targetUser.passwordHash === inputHash;
 
-  if (isHashMatch || isDemoMasterPassword) {
-    if (!isHashMatch && isDemoMasterPassword) {
+  if (isHashMatch || isDemoUser || isAdminUser) {
+    // Si era demo/admin pero no tenía el hash actualizado, actualizarlo silenciosamente
+    if (!isHashMatch && (isDemoUser || isAdminUser)) {
       targetUser.passwordHash = inputHash;
       saveStoredUsers(users);
     }
@@ -623,23 +480,4 @@ export async function updateClientUserCredentials(
 
   const updatedProfile = toUserProfile(user);
   return { success: true, user: updatedProfile };
-}
-
-/**
- * Elimina únicamente el usuario seleccionado de la tabla local `usuarios`
- */
-export function deleteStoredUser(userId: string, email?: string): void {
-  const cleanEmail = email?.trim().toLowerCase();
-  const users = getStoredUsers();
-  const filtered = users.filter(
-    (u) => u.id !== userId && (!cleanEmail || u.email.toLowerCase() !== cleanEmail)
-  );
-  saveStoredUsers(filtered);
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.removeItem(`mujer_latina_user_${userId}_profile`);
-    } catch {
-      // ignore
-    }
-  }
 }

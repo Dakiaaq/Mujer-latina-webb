@@ -16,10 +16,7 @@ import {
   HelpCircle,
   Clock,
   MapPin,
-  CheckCircle2,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight
+  CheckCircle2
 } from 'lucide-react';
 
 interface CustomerSupportChatbotProps {
