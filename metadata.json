@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Remix Remix Remix Mujer Latina - Belleza que Empodera",
+  "description": "Plataforma e-commerce y suite administrativa de alta gama para Mujer Latina con catálogo interactivo, pedidos por WhatsApp, gestión de inventario, verificación de pagos y arquitectura MVC con Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
